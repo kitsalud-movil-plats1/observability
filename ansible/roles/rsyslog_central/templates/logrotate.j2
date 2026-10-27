@@ -1,0 +1,15 @@
+# {{ ansible_managed }} (rol rsyslog_central, R12)
+# Semanal con {{ registros_rotacion_copias }} copias; un archivo que pase de {{ registros_rotacion_tope }} rota antes
+{{ registros_dir }}/*/*.log {
+	weekly
+	rotate {{ registros_rotacion_copias }}
+	maxsize {{ registros_rotacion_tope }}
+	compress
+	delaycompress
+	missingok
+	notifempty
+	sharedscripts
+	postrotate
+		/usr/lib/rsyslog/rsyslog-rotate
+	endscript
+}

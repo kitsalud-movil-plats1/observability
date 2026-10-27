@@ -1,0 +1,54 @@
+# {{ ansible_managed }} (rol rsyslog_central, R12)
+# Receptor central en kit01: 514/tcp desde las VMs (F-15) y 514/udp desde sw01
+# (F-16), solo en las IP de servicios. nftables limita quién llega a cada puerto.
+{% macro archivo() -%}
+template="RSYSLOG_FileFormat" createDirs="on" dirGroup="adm" dirCreateMode="0750"
+fileGroup="adm" fileCreateMode="0640"
+{%- endmacro %}
+
+# Sin consultas DNS inversas: el equipo se reconoce por la IP de origen y sin
+# WAN cada consulta a los DNS del sitio se quedaría esperando
+global(net.enableDNS="off")
+
+module(load="imtcp")
+module(load="imudp")
+
+template(name="kitsalud_remoto" type="string"
+         string="{{ registros_dir }}/%$.equipo%/%$.archivo%.log")
+
+# Lo remoto va a su propio ruleset y no se mezcla con /var/log/syslog de kit01.
+# El equipo sale de la IP de origen, no del nombre que trae el mensaje.
+ruleset(name="remoto") {
+	set $.equipo = "desconocido";
+{% for e in registros_equipos %}
+{% for ip in [e.ipv4 | default(''), e.ipv6 | default('')] if ip %}
+	if $fromhost-ip == "{{ ip }}" then { set $.equipo = "{{ e.nombre }}"; }
+{% endfor %}
+{% endfor %}
+	if $syslogfacility-text == "auth" or $syslogfacility-text == "authpriv" then {
+		set $.archivo = "auth";
+	} else {
+		set $.archivo = "syslog";
+	}
+	action(type="omfile" dynaFile="kitsalud_remoto" {{ archivo() }})
+}
+
+{% for ip in registros_escucha %}
+input(type="imtcp" address="{{ ip }}" port="514" ruleset="remoto")
+input(type="imudp" address="{{ ip }}" port="514" ruleset="remoto")
+{% endfor %}
+
+# Copias de los eventos de kit01 junto a los de los demás equipos. Los
+# originales siguen en /var/log/syslog, kern.log y auth.log.
+if $syslogfacility-text == "kern" and $msg contains "fw-drop " then {
+	action(type="omfile" file="{{ registros_dir }}/kit01/firewall.log" {{ archivo() }})
+}
+if $programname startswith "kea-dhcp" then {
+	action(type="omfile" file="{{ registros_dir }}/kit01/dhcp.log" {{ archivo() }})
+}
+if $programname == "named" then {
+	action(type="omfile" file="{{ registros_dir }}/kit01/dns.log" {{ archivo() }})
+}
+if $syslogfacility-text == "auth" or $syslogfacility-text == "authpriv" then {
+	action(type="omfile" file="{{ registros_dir }}/kit01/auth.log" {{ archivo() }})
+}
