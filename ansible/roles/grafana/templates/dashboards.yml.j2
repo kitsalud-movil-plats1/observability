@@ -1,0 +1,12 @@
+# {{ ansible_managed }} (rol grafana)
+# Los dashboards se cambian en el repositorio observability (grafana/dashboards)
+apiVersion: 1
+providers:
+  - name: kit
+    folder: Kit de salud
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: {{ grafana_dashboards_dir }}

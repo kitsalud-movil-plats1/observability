@@ -1,0 +1,23 @@
+---
+# Grafana en kit01 (R10, R12, observability#2). Escucha en localhost y nginx
+# lo publica como https://monitoreo.salud.movil (F-01).
+grafana_escucha: 127.0.0.1
+grafana_puerto: 3000
+grafana_nombre: "monitoreo.{{ dominio }}"
+grafana_admin_password: "{{ vault_grafana_admin_password }}"
+
+# Certificado de monitoreo, firmado por la raíz en kit01 (rol ca_interna)
+grafana_tls_dir: /etc/kitsalud/tls
+grafana_ca_origen: /etc/kitsalud/ca/raiz.crt
+
+# Login LDAPS contra Samba AD en clinica01 (F-13). Solo entra el grupo admins,
+# con rol Admin. kit01 resuelve con los DNS del sitio, así que el nombre del DC
+# va en /etc/hosts.
+grafana_ldap_host: "{{ samba_dc_fqdn }}"
+grafana_ldap_ips: ["{{ equipos.clinica01.ipv4 }}", "{{ equipos.clinica01.ipv6 }}"]
+grafana_ldap_base: "{{ samba_realm | lower | split('.') | map('regex_replace', '^', 'DC=') | join(',') }}"
+grafana_ldap_grupo: admins
+
+# Dashboards del repositorio observability, que se copian tal cual
+grafana_dashboards_fuente: "{{ role_path }}/../../../grafana/dashboards"
+grafana_dashboards_dir: /var/lib/grafana/dashboards
