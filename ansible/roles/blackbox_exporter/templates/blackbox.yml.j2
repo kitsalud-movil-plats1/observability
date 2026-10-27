@@ -1,0 +1,43 @@
+# {{ ansible_managed }} (rol blackbox_exporter, R12)
+# Módulos de las sondas que Prometheus hace desde kit01. El destino es siempre
+# una IP, así que la familia (IPv4 o IPv6) la fija el destino.
+modules:
+  icmp:
+    prober: icmp
+    timeout: 5s
+
+  tcp:
+    prober: tcp
+    timeout: 5s
+
+  # DNS contra BIND9; la respuesta tiene que traer la dirección esperada
+{% for c in monitoreo_dns_consultas %}
+  dns_{{ c.nombre | regex_replace('[^a-z0-9]+', '_') }}_{{ c.tipo | lower }}:
+    prober: dns
+    timeout: 5s
+    dns:
+      query_name: {{ c.nombre }}
+      query_type: {{ c.tipo }}
+      valid_rcodes: [NOERROR]
+      validate_answer_rrs:
+        fail_if_none_matches_regexp: ['{{ c.respuesta | regex_escape }}$']
+{% endfor %}
+
+  # Un módulo por servicio web, con el nombre en Host y en SNI. Sin seguir
+  # redirecciones, porque kit01 no resuelve los nombres del kit.
+{% for w in monitoreo_web %}
+  web_{{ w.nombre }}:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      follow_redirects: false
+      headers:
+        Host: {{ w.nombre }}.{{ dominio }}
+{% if w.esquema == 'https' %}
+      fail_if_not_ssl: true
+      tls_config:
+        server_name: {{ w.nombre }}.{{ dominio }}
+        ca_file: {{ blackbox_ca }}
+{% endif %}
+{% endfor %}
