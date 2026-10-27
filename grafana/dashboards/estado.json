@@ -1,0 +1,572 @@
+{
+  "uid": "kit-estado",
+  "title": "Estado del kit",
+  "tags": [
+    "kit"
+  ],
+  "description": "Qué funciona y qué no en el kit, de un vistazo.",
+  "timezone": "browser",
+  "refresh": "30s",
+  "editable": false,
+  "graphTooltip": 0,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Problemas ahora",
+      "description": "Alertas activas en este momento. 0 es lo normal.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "count(ALERTS{alertstate=\"firing\"}) or vector(0)",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Ninguno",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "unit": "none",
+          "noValue": "Sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value",
+        "orientation": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Equipos",
+      "description": "Encendido quiere decir que el equipo responde desde kit01.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 20,
+        "h": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(up{job=\"node\",equipo=\"kit01\"})) or vector(0)",
+          "legendFormat": "kit01 (router y servidor)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(up{job=\"node\",equipo=\"clinica01\"})) or vector(0)",
+          "legendFormat": "clinica01",
+          "refId": "B",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(up{job=\"node\",equipo=\"comunidad01\"})) or vector(0)",
+          "legendFormat": "comunidad01",
+          "refId": "C",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{job=\"sonda_icmp\",equipo=\"sw01\"})) or vector(0)",
+          "legendFormat": "Switch (sw01)",
+          "refId": "D",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{job=\"sonda_icmp\",equipo=\"ap01\"})) or vector(0)",
+          "legendFormat": "Wi-Fi (ap01)",
+          "refId": "E",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Encendido",
+                  "color": "green",
+                  "index": 0
+                },
+                "0": {
+                  "text": "No responde",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "unit": "none",
+          "noValue": "Sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Servicios",
+      "description": "Cada servicio se prueba desde kit01 en IPv4 y en IPv6. Si falla cualquiera de las dos, sale en rojo y el detalle está en la tabla de abajo.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{servicio=\"pacientes\"})) or vector(0)",
+          "legendFormat": "Historia clínica (DHIS2)",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{servicio=\"registro\"})) or vector(0)",
+          "legendFormat": "Registro de pacientes",
+          "refId": "B",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{servicio=\"biblioteca\"})) or vector(0)",
+          "legendFormat": "Biblioteca",
+          "refId": "C",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{servicio=\"smb\"})) or vector(0)",
+          "legendFormat": "Archivos compartidos",
+          "refId": "D",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(node_systemd_unit_state{equipo=\"clinica01\",name=\"samba-ad-dc.service\",state=\"active\"})) or vector(0)",
+          "legendFormat": "Inicio de sesión (AD)",
+          "refId": "E",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{servicio=\"postgresql\"})) or vector(0)",
+          "legendFormat": "Base de datos",
+          "refId": "F",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{job=\"sonda_dns\"})) or vector(0)",
+          "legendFormat": "Nombres de la red (DNS)",
+          "refId": "G",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(node_systemd_unit_state{equipo=\"kit01\",name=~\"kea-dhcp4-server.service|kea-dhcp6-server.service|radvd.service\",state=\"active\"})) or vector(0)",
+          "legendFormat": "Direcciones de la red (DHCP)",
+          "refId": "H",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(node_systemd_unit_state{equipo=\"kit01\",name=\"chrony.service\",state=\"active\"})) or vector(0)",
+          "legendFormat": "Hora del kit (NTP)",
+          "refId": "I",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Funciona",
+                  "color": "green",
+                  "index": 0
+                },
+                "0": {
+                  "text": "No funciona",
+                  "color": "red",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "unit": "none",
+          "noValue": "Sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Qué está fallando",
+      "description": "Vacía cuando todo funciona. Red indica si falla en IPv4 o en IPv6.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "legendFormat": "",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "alertstate": true,
+              "job": true,
+              "severidad": true,
+              "type": true
+            },
+            "indexByName": {
+              "alertname": 0,
+              "servicio": 1,
+              "name": 2,
+              "mountpoint": 3,
+              "equipo": 4,
+              "familia": 5,
+              "consulta": 6,
+              "instance": 7
+            },
+            "renameByName": {
+              "alertname": "Problema",
+              "servicio": "Servicio",
+              "name": "Programa",
+              "mountpoint": "Disco",
+              "equipo": "Equipo",
+              "familia": "Red",
+              "consulta": "Consulta DNS",
+              "instance": "Dirección probada"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Todo funciona"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Problema"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ServicioCaido": {
+                        "text": "Un servicio no responde",
+                        "color": "red",
+                        "index": 0
+                      },
+                      "UnidadFallida": {
+                        "text": "Un programa se detuvo con error",
+                        "color": "red",
+                        "index": 1
+                      },
+                      "ExporterCaido": {
+                        "text": "Un equipo no envía datos",
+                        "color": "red",
+                        "index": 2
+                      },
+                      "DiscoAlto": {
+                        "text": "Disco casi lleno",
+                        "color": "red",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Red"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ipv4": {
+                        "text": "IPv4",
+                        "color": "text",
+                        "index": 0
+                      },
+                      "ipv6": {
+                        "text": "IPv6",
+                        "color": "text",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "text",
+      "title": "Si algo está en rojo",
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 24,
+        "h": 5
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "1. En **Qué está fallando** se ve cuál servicio falla y en qué equipo.\n2. Si no responde un equipo entero (clinica01 o comunidad01), en kit01 se revisa que esté encendido con `virsh list --all`.\n3. Si falla un servicio, en su equipo se revisa con `systemctl status <servicio>` o `docker compose ps`. El detalle está en la guía de operación y en `observability/prometheus/README.md`."
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  }
+}
