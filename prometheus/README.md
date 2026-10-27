@@ -17,7 +17,7 @@ Los tres son paquetes de Ubuntu 24.04 con versión fija (`paquetes.yml`) y reten
 |---|---|---|
 | `node` | kit01, clinica01 y comunidad01 | CPU, memoria, disco, hora (`node_timex_sync_status`) y estado de `named`, `kea-dhcp4-server`, `kea-dhcp6-server`, `radvd`, `chrony`, `nftables`, `netbird`, `libvirtd`, `samba-ad-dc` y `docker` |
 | `sonda_dns` | BIND9 en `10.20.20.10` y `fd5a:fc7e:d716:20::10` | A y AAAA de `pacientes.salud.movil` y A de `dc01.ad.salud.movil` (delegación a Samba AD). La respuesta tiene que traer la dirección esperada |
-| `sonda_web` | `pacientes` (`/api/ping`) y `registro` por HTTPS, `biblioteca` y `ca` por HTTP | Respuesta `2xx`. En HTTPS además valida el certificado con la raíz de la CA del kit |
+| `sonda_web` | `pacientes` (`/api/ping`), `registro` y `consultas` (`/salud`) por HTTPS, `biblioteca` y `ca` por HTTP | Respuesta `2xx`. En HTTPS además valida el certificado con la raíz de la CA del kit |
 | `sonda_tcp` | clinica01 en el 445 (SMB), el 5432 (PostgreSQL) y el 636 (LDAPS de Samba AD), y el 22 (SSH) de kit01, clinica01 y comunidad01 | El puerto acepta conexiones. El SSH de kit01 se sondea en sus direcciones de servicio (`10.20.20.10` y `::10`) |
 | `sonda_icmp` | sw01, ap01 (solo IPv4), clinica01 y comunidad01 | Eco ICMP e ICMPv6 |
 | `prometheus` y `blackbox` | kit01 | Los propios servicios de monitoreo |
@@ -63,7 +63,7 @@ En kit01.
 | Comando | Resultado esperado |
 |---|---|
 | `ss -ltn \| grep -E ':(9090\|9100\|9115) '` | Los tres solo en `127.0.0.1` |
-| `curl -s 127.0.0.1:9090/api/v1/targets \| grep -o '"health":"[a-z]*"' \| sort \| uniq -c` | 38 en `up` |
+| `curl -s 127.0.0.1:9090/api/v1/targets \| grep -o '"health":"[a-z]*"' \| sort \| uniq -c` | 40 en `up` |
 | `curl -s '127.0.0.1:9090/api/v1/query?query=probe_success==0'` | Resultado vacío |
 | `curl -s 127.0.0.1:9090/api/v1/alerts` | Sin alertas |
 | `curl -s '127.0.0.1:9115/probe?module=web_pacientes&target=https://10.20.20.12/' \| grep probe_success` | `0`, porque el intermedio de comunidad01 no puede firmar `pacientes` |
