@@ -1,0 +1,8 @@
+---
+# blackbox_exporter en kit01 (R12, observability#1). Escucha en
+# monitoreo_blackbox (inventario) y solo lo consulta Prometheus en el mismo equipo.
+
+# Raíz de la CA del kit (rol ca_interna). Se copia porque /etc/kitsalud solo
+# lo lee root y el exportador corre como prometheus.
+blackbox_ca_origen: /etc/kitsalud/ca/raiz.crt
+blackbox_ca: /etc/prometheus/ca-kit.crt

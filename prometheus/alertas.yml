@@ -1,0 +1,42 @@
+# Reglas de alerta del kit (R12, observability#1). No hay Alertmanager porque
+# sin Internet no hay a dónde enviarlas (D-09); se revisan en /classic/alerts de
+# Prometheus y en Grafana. Las copia el rol prometheus a /etc/prometheus/reglas/.
+groups:
+  - name: kit
+    rules:
+      # Cualquier sonda blackbox (DNS, web, TCP o ping) que deja de responder
+      - alert: ServicioCaido
+        expr: probe_success == 0
+        for: 30s
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "{{ $labels.servicio }} no responde en {{ $labels.instance }} ({{ $labels.familia }})"
+
+      # Una unidad crítica de systemd que terminó con error
+      - alert: UnidadFallida
+        expr: node_systemd_unit_state{state="failed"} == 1
+        for: 30s
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "{{ $labels.name }} falló en {{ $labels.equipo }}"
+
+      # Prometheus no puede leer un exportador (equipo apagado o exportador caído)
+      - alert: ExporterCaido
+        expr: up == 0
+        for: 1m
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "No se pueden leer las métricas de {{ $labels.job }} en {{ $labels.instance }}"
+
+      - alert: DiscoAlto
+        expr: >-
+          (1 - node_filesystem_avail_bytes{fstype=~"ext4|xfs|vfat"}
+          / node_filesystem_size_bytes{fstype=~"ext4|xfs|vfat"}) * 100 > 80
+        for: 5m
+        labels:
+          severidad: aviso
+        annotations:
+          resumen: "{{ $labels.mountpoint }} de {{ $labels.equipo }} al {{ $value | printf \"%.0f\" }} %"

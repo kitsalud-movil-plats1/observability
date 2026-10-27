@@ -1,0 +1,4 @@
+# {{ ansible_managed }} (rol node_exporter, R12)
+# Lo lee prometheus-node-exporter.service. El colector systemd muestra el
+# estado de las unidades críticas del kit (P13).
+ARGS="--web.listen-address={{ node_exporter_escucha }} --collector.systemd --collector.systemd.unit-include=({{ node_exporter_unidades | join('|') }})[.]service"

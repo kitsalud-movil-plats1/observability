@@ -1,0 +1,89 @@
+---
+- name: Paquetes instalados
+  ansible.builtin.package_facts:
+
+- name: Impedir que el paquete arranque blackbox al instalarse
+  ansible.builtin.copy:
+    dest: /usr/sbin/policy-rc.d
+    content: "#!/bin/sh\nexit 101\n"
+    mode: "0755"
+    force: false
+  register: blackbox_policy
+  when: "'prometheus-blackbox-exporter' not in ansible_facts.packages"
+
+# Las sondas ICMP necesitan CAP_NET_RAW. El paquete se la da al binario solo si
+# se responde que sí a esta pregunta (por omisión, no).
+- name: CAP_NET_RAW para las sondas ICMP
+  ansible.builtin.debconf:
+    name: prometheus-blackbox-exporter
+    question: prometheus-blackbox-exporter/want_cap_net_raw
+    vtype: boolean
+    value: "true"
+  register: blackbox_debconf
+
+- name: blackbox_exporter con versión fija
+  when: >-
+    'prometheus-blackbox-exporter' not in ansible_facts.packages or
+    ansible_facts.packages['prometheus-blackbox-exporter'][0].version != version_blackbox_exporter
+  block:
+    - name: Paquete prometheus-blackbox-exporter
+      ansible.builtin.apt:
+        name: "prometheus-blackbox-exporter={{ version_blackbox_exporter }}"
+        state: present
+        install_recommends: false
+        update_cache: true
+        cache_valid_time: 3600
+  always:
+    - name: Quitar el bloqueo de arranque
+      ansible.builtin.file:
+        path: /usr/sbin/policy-rc.d
+        state: absent
+      when: blackbox_policy is changed
+
+- name: Aplicar la respuesta si el paquete ya estaba instalado
+  ansible.builtin.command: dpkg-reconfigure -f noninteractive prometheus-blackbox-exporter
+  when:
+    - blackbox_debconf is changed
+    - "'prometheus-blackbox-exporter' in ansible_facts.packages"
+  changed_when: true
+  notify: Reiniciar blackbox_exporter
+
+- name: Retener blackbox_exporter
+  ansible.builtin.dpkg_selections:
+    name: prometheus-blackbox-exporter
+    selection: hold
+
+- name: Raíz de la CA del kit para las sondas HTTPS
+  ansible.builtin.copy:
+    src: "{{ blackbox_ca_origen }}"
+    dest: "{{ blackbox_ca }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar blackbox_exporter
+
+- name: Módulos de las sondas (validados con --config.check)
+  ansible.builtin.template:
+    src: blackbox.yml.j2
+    dest: /etc/prometheus/blackbox.yml
+    owner: root
+    group: root
+    mode: "0644"
+    validate: prometheus-blackbox-exporter --config.check --config.file=%s
+  notify: Reiniciar blackbox_exporter
+
+- name: Argumentos de blackbox_exporter
+  ansible.builtin.template:
+    src: prometheus-blackbox-exporter.j2
+    dest: /etc/default/prometheus-blackbox-exporter
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar blackbox_exporter
+
+- name: blackbox_exporter activo al arrancar
+  ansible.builtin.systemd_service:
+    name: prometheus-blackbox-exporter
+    enabled: true
+    state: started
