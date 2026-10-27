@@ -1,0 +1,12 @@
+# {{ ansible_managed }} (rol grafana)
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://{{ monitoreo_prometheus }}
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s

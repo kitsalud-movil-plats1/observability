@@ -1,0 +1,29 @@
+# {{ ansible_managed }} (rol grafana, R10, F-13)
+# Login contra Samba AD por LDAPS. Grafana entra con las credenciales del
+# propio usuario (sin cuenta de servicio) y verifica el certificado del DC con
+# la raíz del kit. Solo entra el grupo {{ grafana_ldap_grupo }}.
+[[servers]]
+host = "{{ grafana_ldap_host }}"
+port = 636
+use_ssl = true
+start_tls = false
+ssl_skip_verify = false
+root_ca_cert = "/etc/grafana/ca-kit.crt"
+min_tls_version = "TLS1.2"
+timeout = 10
+
+bind_dn = "%s@{{ samba_realm | lower }}"
+search_filter = "(sAMAccountName=%s)"
+search_base_dns = ["{{ grafana_ldap_base }}"]
+
+[servers.attributes]
+name = "givenName"
+surname = "sn"
+username = "sAMAccountName"
+member_of = "memberOf"
+email = "userPrincipalName"
+
+# Quien no está en el grupo no puede entrar
+[[servers.group_mappings]]
+group_dn = "CN={{ grafana_ldap_grupo }},CN=Users,{{ grafana_ldap_base }}"
+org_role = "Admin"

@@ -1,0 +1,29 @@
+# {{ ansible_managed }} (rol grafana)
+# https://{{ grafana_nombre }} (F-01). Escucha en todas las direcciones y
+# nftables solo deja llegar al 443 a las IP de administración y a NetBird. El
+# portal cautivo (network#8) va en su propia dirección (10.20.40.1).
+server {
+    listen 443 ssl http2 default_server;
+    listen [::]:443 ssl http2 default_server;
+    server_name {{ grafana_nombre }};
+
+    ssl_certificate {{ grafana_tls_dir }}/monitoreo.crt;
+    ssl_certificate_key {{ grafana_tls_dir }}/monitoreo.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://{{ grafana_escucha }}:{{ grafana_puerto }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Actualizaciones en vivo de Grafana (websocket)
+    location /api/live/ {
+        proxy_pass http://{{ grafana_escucha }}:{{ grafana_puerto }};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}

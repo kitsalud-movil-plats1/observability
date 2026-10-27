@@ -1,0 +1,417 @@
+{
+  "uid": "kit-recursos",
+  "title": "Recursos de los equipos",
+  "tags": [
+    "kit"
+  ],
+  "description": "Procesador, memoria y disco de kit01 y de las VMs.",
+  "timezone": "browser",
+  "refresh": "30s",
+  "editable": false,
+  "graphTooltip": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Encendido desde hace",
+      "description": "Tiempo desde el último arranque de cada equipo.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "time() - node_boot_time_seconds{equipo=~\"kit01|clinica01|comunidad01\"}",
+          "legendFormat": "{{equipo}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "unit": "dtdurations",
+          "noValue": "Sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "orientation": "auto",
+        "wideLayout": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Procesador en uso",
+      "description": "Promedio de los últimos 5 minutos. Amarillo desde el 70 %, rojo desde el 90 %.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * (1 - avg by (equipo) (rate(node_cpu_seconds_total{mode=\"idle\",equipo=~\"kit01|clinica01|comunidad01\"}[5m])))",
+          "legendFormat": "{{equipo}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "noValue": "Sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "gauge",
+      "title": "Memoria en uso",
+      "description": "Memoria ocupada de cada equipo. En kit01 incluye la que usan las VMs. Amarillo desde el 80 %, rojo desde el 90 %.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{equipo=~\"kit01|clinica01|comunidad01\"} / node_memory_MemTotal_bytes{equipo=~\"kit01|clinica01|comunidad01\"})",
+          "legendFormat": "{{equipo}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "noValue": "Sin datos",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "bargauge",
+      "title": "Disco ocupado",
+      "description": "Cada disco de cada equipo. Amarillo desde el 70 %, rojo desde el 80 % (ahí salta la alerta). /srv es el disco de datos de cada VM.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * (1 - node_filesystem_avail_bytes{fstype=~\"ext4|xfs|vfat\",equipo=~\"kit01|clinica01|comunidad01\"} / node_filesystem_size_bytes{fstype=~\"ext4|xfs|vfat\",equipo=~\"kit01|clinica01|comunidad01\"})",
+          "legendFormat": "{{equipo}}  {{mountpoint}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Procesador en las últimas horas",
+      "description": "Sirve para ver si un pico fue momentáneo o sostenido.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * (1 - avg by (equipo) (rate(node_cpu_seconds_total{mode=\"idle\",equipo=~\"kit01|clinica01|comunidad01\"}[5m])))",
+          "legendFormat": "{{equipo}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Memoria en las últimas horas",
+      "description": "Sirve para ver si la memoria va subiendo con el tiempo. En kit01 incluye la que usan las VMs.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{equipo=~\"kit01|clinica01|comunidad01\"} / node_memory_MemTotal_bytes{equipo=~\"kit01|clinica01|comunidad01\"})",
+          "legendFormat": "{{equipo}}",
+          "refId": "A",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  }
+}

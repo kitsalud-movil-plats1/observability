@@ -1,0 +1,163 @@
+---
+# Ubuntu no empaqueta Grafana; se usa el repositorio oficial con la versión
+# fija y retenida
+- name: Repositorio de Grafana
+  ansible.builtin.deb822_repository:
+    name: grafana
+    types: deb
+    uris: https://apt.grafana.com
+    suites: stable
+    components: main
+    signed_by: https://apt.grafana.com/gpg.key
+
+- name: Paquetes instalados
+  ansible.builtin.package_facts:
+
+- name: Grafana con versión fija
+  ansible.builtin.apt:
+    name: "grafana={{ version_grafana }}"
+    state: present
+    install_recommends: false
+    update_cache: true
+  when: >-
+    'grafana' not in ansible_facts.packages or
+    ansible_facts.packages['grafana'][0].version != version_grafana
+
+- name: Retener Grafana
+  ansible.builtin.dpkg_selections:
+    name: grafana
+    selection: hold
+
+- name: El nombre del DC en /etc/hosts (kit01 resuelve con los DNS del sitio)
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^{{ item | regex_escape }}\\s"
+    line: "{{ item }} {{ grafana_ldap_host }}"
+  loop: "{{ grafana_ldap_ips }}"
+
+- name: Raíz de la CA del kit para LDAPS
+  ansible.builtin.copy:
+    src: "{{ grafana_ca_origen }}"
+    dest: /etc/grafana/ca-kit.crt
+    remote_src: true
+    owner: root
+    group: grafana
+    mode: "0644"
+  notify: Reiniciar Grafana
+
+# grafana.ini la lee con $__file{}, así la clave no aparece en el --diff
+- name: Clave de la cuenta local admin
+  ansible.builtin.copy:
+    content: "{{ grafana_admin_password }}"
+    dest: /etc/grafana/admin.clave
+    owner: root
+    group: grafana
+    mode: "0640"
+  no_log: true
+
+- name: Configuración de Grafana
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/grafana/{{ item }}"
+    owner: root
+    group: grafana
+    mode: "0640"
+  loop: [grafana.ini, ldap.toml]
+  notify: Reiniciar Grafana
+
+- name: Carpetas de provisioning
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: grafana
+    mode: "0755"
+  loop:
+    - /etc/grafana/provisioning/datasources
+    - /etc/grafana/provisioning/dashboards
+    - "{{ grafana_dashboards_dir }}"
+
+- name: Datasource de Prometheus y origen de los dashboards
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "/etc/grafana/provisioning/{{ item.dest }}"
+    owner: root
+    group: grafana
+    mode: "0640"
+  loop:
+    - { src: datasource.yml.j2, dest: datasources/kit.yml }
+    - { src: dashboards.yml.j2, dest: dashboards/kit.yml }
+  notify: Reiniciar Grafana
+
+# Grafana relee la carpeta cada 30 s, así que un dashboard nuevo no necesita
+# reiniciar
+- name: Dashboards del kit
+  ansible.builtin.copy:
+    src: "{{ grafana_dashboards_fuente }}/"
+    dest: "{{ grafana_dashboards_dir }}/"
+    owner: root
+    group: grafana
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Grafana activo al arrancar
+  ansible.builtin.systemd_service:
+    name: grafana-server
+    enabled: true
+    state: started
+
+- name: Aplicar ya la configuración
+  ansible.builtin.meta: flush_handlers
+
+- name: Grafana responde
+  ansible.builtin.uri:
+    url: "http://{{ grafana_escucha }}:{{ grafana_puerto }}/api/health"
+  register: grafana_salud
+  until: grafana_salud.status == 200
+  retries: 30
+  delay: 2
+
+# admin_password de grafana.ini solo vale al crear la base; si alguien la
+# cambió, se vuelve a la del vault
+- name: Cuenta local admin con la clave del vault
+  ansible.builtin.uri:
+    url: "http://{{ grafana_escucha }}:{{ grafana_puerto }}/api/user"
+    user: admin
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    status_code: [200, 401]
+  register: grafana_admin
+  no_log: true
+
+- name: Restablecer la clave de admin
+  ansible.builtin.command:
+    argv:
+      - grafana
+      - cli
+      - --homepath
+      - /usr/share/grafana
+      - --config
+      - /etc/grafana/grafana.ini
+      - admin
+      - reset-admin-password
+      - "{{ grafana_admin_password }}"
+  become_user: grafana
+  when: grafana_admin.status == 401
+  changed_when: true
+  no_log: true
+
+- name: Sitio de monitoreo en nginx
+  ansible.builtin.template:
+    src: monitoreo.nginx.j2
+    dest: /etc/nginx/sites-available/monitoreo
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar nginx
+
+- name: Sitio de monitoreo activo
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/monitoreo
+    dest: /etc/nginx/sites-enabled/monitoreo
+    state: link
+  notify: Recargar nginx

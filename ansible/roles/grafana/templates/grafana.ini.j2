@@ -1,0 +1,47 @@
+# {{ ansible_managed }} (rol grafana, R10, R12)
+# Lo que no está aquí queda con el valor de /usr/share/grafana/conf/defaults.ini
+
+[server]
+http_addr = {{ grafana_escucha }}
+http_port = {{ grafana_puerto }}
+domain = {{ grafana_nombre }}
+root_url = https://{{ grafana_nombre }}/
+
+[security]
+admin_user = admin
+admin_password = $__file{/etc/grafana/admin.clave}
+cookie_secure = true
+disable_gravatar = true
+
+[users]
+allow_sign_up = false
+default_language = es-ES
+
+[dashboards]
+# La página de inicio es el estado del kit
+default_home_dashboard_path = {{ grafana_dashboards_dir }}/estado.json
+
+[auth]
+# La cuenta local admin entra aunque clinica01 esté apagada
+disable_login_form = false
+
+[auth.ldap]
+enabled = true
+config_file = /etc/grafana/ldap.toml
+allow_sign_up = true
+
+# Sin Internet en campo: nada de reportes, noticias ni descargas de plugins
+[analytics]
+reporting_enabled = false
+check_for_updates = false
+check_for_plugin_updates = false
+feedback_links_enabled = false
+
+[news]
+news_feed_enabled = false
+
+[plugins]
+preinstall_disabled = true
+
+[date_formats]
+default_timezone = America/Bogota
