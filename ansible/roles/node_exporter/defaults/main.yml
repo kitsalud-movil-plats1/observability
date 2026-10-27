@@ -1,0 +1,23 @@
+---
+# node_exporter (R12, observability#1). En las VMs escucha en todas sus
+# direcciones y ufw solo deja entrar a kit01 (F-14); en kit01 va en localhost
+# (host_vars/kit01.yml).
+node_exporter_escucha: ":9100"
+
+# Unidades que muestra el colector systemd para el diagnóstico (P13). Las que
+# no existen en un equipo simplemente no aparecen.
+node_exporter_unidades:
+  - named
+  - kea-dhcp4-server
+  - kea-dhcp6-server
+  - radvd
+  - chrony
+  - nftables
+  - netbird
+  - libvirtd
+  - samba-ad-dc
+  - docker
+
+# Puertos que se abren a kit01 en cada VM para las sondas blackbox, además
+# del 9100 (host_vars de cada VM)
+monitoreo_puertos: []
