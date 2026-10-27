@@ -1,0 +1,62 @@
+---
+- name: Paquetes instalados
+  ansible.builtin.package_facts:
+
+- name: rsyslog con versión fija
+  ansible.builtin.apt:
+    name: "rsyslog={{ version_rsyslog }}"
+    state: present
+    install_recommends: false
+    update_cache: true
+    cache_valid_time: 3600
+  when: >-
+    'rsyslog' not in ansible_facts.packages or
+    ansible_facts.packages['rsyslog'][0].version != version_rsyslog
+  notify: Reiniciar rsyslog
+
+- name: Retener rsyslog
+  ansible.builtin.dpkg_selections:
+    name: rsyslog
+    selection: hold
+
+# rsyslog escribe como syslog después de soltar privilegios; las carpetas de
+# los demás equipos las crea él mismo al recibir el primer mensaje
+- name: Carpetas del log central
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: syslog
+    group: adm
+    mode: "0750"
+  loop:
+    - "{{ registros_dir }}"
+    - "{{ registros_dir }}/kit01"
+
+# AppArmor solo deja leer a rsyslogd sus rutas, así que se valida una copia en
+# /etc/rsyslog.d/ con un nombre que no termina en .conf (no se carga)
+- name: Receptor y copias de kit01 (validado con rsyslogd -N1)
+  ansible.builtin.template:
+    src: kitsalud-central.conf.j2
+    dest: /etc/rsyslog.d/30-kitsalud-central.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: >-
+      sh -c 'install -m 0644 %s /etc/rsyslog.d/.validar-central &&
+      rsyslogd -N1 -f /etc/rsyslog.d/.validar-central; r=$?; rm -f /etc/rsyslog.d/.validar-central; exit $r'
+  notify: Reiniciar rsyslog
+
+- name: Rotación del log central
+  ansible.builtin.template:
+    src: logrotate.j2
+    dest: /etc/logrotate.d/kitsalud-registros
+    owner: root
+    group: root
+    mode: "0644"
+    validate: logrotate -d %s
+
+- name: rsyslog activo al arrancar
+  ansible.builtin.systemd_service:
+    name: rsyslog
+    enabled: true
+    state: started

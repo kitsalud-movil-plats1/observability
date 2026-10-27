@@ -1,0 +1,10 @@
+---
+# Receptor central de rsyslog en kit01 (R12, observability#3). Las direcciones
+# de escucha y los equipos que envían salen del inventario (registros.yml).
+
+# Una carpeta por equipo; los eventos de kit01 se copian en kit01/
+registros_dir: /var/log/kitsalud
+
+# Rotación semanal con pocas copias; maxsize es solo un tope de seguridad
+registros_rotacion_copias: 4
+registros_rotacion_tope: 100M
