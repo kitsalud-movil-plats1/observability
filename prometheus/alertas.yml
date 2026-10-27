@@ -1,5 +1,5 @@
 # Reglas de alerta del kit (R12, observability#1). No hay Alertmanager porque
-# sin Internet no hay a dónde enviarlas (D-09); se revisan en /alerts de
+# sin Internet no hay a dónde enviarlas (D-09); se revisan en /classic/alerts de
 # Prometheus y en Grafana. Las copia el rol prometheus a /etc/prometheus/reglas/.
 groups:
   - name: kit

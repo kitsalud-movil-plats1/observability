@@ -1,6 +1,6 @@
 # Prometheus y exporters en kit01
 
-Estado de servicios, puertos, CPU, memoria y disco del kit (R12, D-09). Prometheus vive en kit01 para seguir viendo el kit aunque caiga una VM. Lee el `node_exporter` de kit01 y de las VMs y hace sondas blackbox de DNS, web, TCP y ping, en IPv4 y en IPv6 salvo el AP, que solo tiene IPv4. No hay Alertmanager, porque sin Internet no hay a dónde enviar las alertas. Se revisan en Prometheus y, con observability#2, en Grafana (`monitoreo.salud.movil`).
+Estado de servicios, puertos, CPU, memoria y disco del kit (R12, D-09). Prometheus vive en kit01 para seguir viendo el kit aunque caiga una VM. Lee el `node_exporter` de kit01 y de las VMs y hace sondas blackbox de DNS, web, TCP y ping, en IPv4 y en IPv6 salvo el AP, que solo tiene IPv4. No hay Alertmanager, porque sin Internet no hay a dónde enviar las alertas. Se revisan en Prometheus (`/classic/alerts`) y, con observability#2, en Grafana (`monitoreo.salud.movil`).
 
 | Archivo | Qué es |
 |---|---|
@@ -72,12 +72,12 @@ En kit01.
 
 En las VMs, `sudo ufw status | grep monitoreo` muestra las reglas para las cuatro direcciones de kit01.
 
-**Ver la interfaz.** Prometheus no se publica en la red. Desde una IP de administración o NetBird, `ssh -L 9090:127.0.0.1:9090 kitsalud@<kit01>` y luego `http://localhost:9090/targets` y `http://localhost:9090/alerts`.
+**Ver la interfaz.** Prometheus no se publica en la red. Desde una IP de administración o NetBird, `ssh -L 9090:127.0.0.1:9090 kitsalud@<kit01>` y, con esa sesión abierta, `http://localhost:9090/classic/targets`, `/classic/alerts`, `/classic/rules` y `/classic/graph`. El paquete de Ubuntu solo trae la interfaz clásica, así que `/targets` y `/alerts` dan 404 y la raíz redirige a `/classic/graph`.
 
 ## Diagnóstico
 
 - **Un target `down` en `node`.** La VM está apagada (`virsh list --all`) o el exportador no corre (`systemctl status prometheus-node-exporter` en la VM). Si responde en la VM pero no desde kit01, falta la regla de ufw (`sudo ufw status | grep 9100`).
-- **Una sonda en 0.** `curl -s '127.0.0.1:9115/probe?module=<módulo>&target=<destino>&debug=true'` muestra cada paso de la sonda y el error. El módulo y el destino están en `/targets`, en las etiquetas `__param_module` e `instance`.
+- **Una sonda en 0.** `curl -s '127.0.0.1:9115/probe?module=<módulo>&target=<destino>&debug=true'` muestra cada paso de la sonda y el error. El módulo y el destino están en `/classic/targets`, en las etiquetas `__param_module` e `instance`.
 - **Las sondas ICMP fallan todas** con `socket: permission denied` en el `debug`. El binario perdió `CAP_NET_RAW`. Se vuelve a aplicar el playbook, que reconfigura el paquete.
 - **Una sonda HTTPS falla con `x509`.** El certificado no es de la CA del kit o cambió la raíz. Se compara `/etc/prometheus/ca-kit.crt` con `/etc/kitsalud/ca/raiz.crt` y se aplica de nuevo el playbook.
 - **Prometheus no arranca después de un cambio.** `journalctl -u prometheus -n 30` y `promtool check config /etc/prometheus/prometheus.yml`. El rol valida antes de copiar, así que suele ser un cambio hecho a mano.
