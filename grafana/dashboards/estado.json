@@ -266,6 +266,17 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "expr": "(min(probe_success{servicio=\"consultas\"})) or vector(0)",
+          "legendFormat": "Consulta de prerregistros",
+          "refId": "K",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "(min(probe_success{servicio=\"biblioteca\"})) or vector(0)",
           "legendFormat": "Biblioteca",
           "refId": "C",
