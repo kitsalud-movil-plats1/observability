@@ -1,0 +1,3 @@
+# {{ ansible_managed }} (rol prometheus, R12)
+# Lo lee prometheus.service
+ARGS="--web.listen-address={{ monitoreo_prometheus }} --storage.tsdb.retention.time={{ prometheus_retencion }}"

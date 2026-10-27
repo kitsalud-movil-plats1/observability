@@ -1,7 +1,6 @@
 ---
-# blackbox_exporter en kit01 (R12, observability#1). Solo lo consulta
-# Prometheus en el mismo equipo.
-blackbox_escucha: 127.0.0.1:9115
+# blackbox_exporter en kit01 (R12, observability#1). Escucha en
+# monitoreo_blackbox (inventario) y solo lo consulta Prometheus en el mismo equipo.
 
 # Raíz de la CA del kit (rol ca_interna). Se copia porque /etc/kitsalud solo
 # lo lee root y el exportador corre como prometheus.

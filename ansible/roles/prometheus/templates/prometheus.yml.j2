@@ -1,0 +1,102 @@
+# {{ ansible_managed }} (rol prometheus, R12)
+# Prometheus en kit01. Lee los node_exporter y hace las sondas blackbox desde
+# kit01 (F-14), en IPv4 y en IPv6 salvo el AP.
+{% macro familia(ip) %}{{ 'ipv6' if ':' in ip else 'ipv4' }}{% endmacro %}
+{% macro sonda() %}
+    metrics_path: /probe
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ monitoreo_blackbox }}
+{% endmacro %}
+global:
+  scrape_interval: {{ prometheus_intervalo }}
+  evaluation_interval: {{ prometheus_intervalo }}
+
+rule_files:
+  - /etc/prometheus/reglas/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["{{ monitoreo_prometheus }}"]
+        labels: { equipo: kit01 }
+
+  - job_name: blackbox
+    static_configs:
+      - targets: ["{{ monitoreo_blackbox }}"]
+        labels: { equipo: kit01 }
+
+  # CPU, memoria, disco y unidades de systemd de kit01 y de las VMs
+  - job_name: node
+    static_configs:
+      - targets: ["{{ node_exporter_escucha }}"]
+        labels: { equipo: kit01 }
+{% for n in monitoreo_nodos %}
+      - targets: ["{{ n.ipv4 }}:9100"]
+        labels: { equipo: {{ n.nombre }} }
+{% endfor %}
+
+  # DNS (A y AAAA) contra BIND9 en las dos direcciones de servicios
+  - job_name: sonda_dns
+{{ sonda() }}
+    static_configs:
+{% for s in monitoreo_dns_servidores %}
+{% for c in monitoreo_dns_consultas %}
+      - targets: ["{{ s }}"]
+        labels:
+          __param_module: dns_{{ c.nombre | regex_replace('[^a-z0-9]+', '_') }}_{{ c.tipo | lower }}
+          servicio: dns
+          consulta: {{ c.nombre }} {{ c.tipo }}
+          equipo: kit01
+          familia: {{ familia(s) }}
+{% endfor %}
+{% endfor %}
+
+  # Servicios web por la IP de cada familia, con el nombre en Host y SNI
+  - job_name: sonda_web
+{{ sonda() }}
+    static_configs:
+{% for w in monitoreo_web %}
+{% for ip in [equipos[w.equipo].ipv4, equipos[w.equipo].ipv6 | default('')] if ip %}
+      - targets: ["{{ w.esquema }}://{{ '[' ~ ip ~ ']' if ':' in ip else ip }}{{ w.ruta }}"]
+        labels:
+          __param_module: web_{{ w.nombre }}
+          servicio: {{ w.nombre }}
+          equipo: {{ w.equipo }}
+          familia: {{ familia(ip) }}
+{% endfor %}
+{% endfor %}
+
+  # Puertos TCP de servicios sin sonda propia (SMB, PostgreSQL)
+  - job_name: sonda_tcp
+{{ sonda() }}
+    static_configs:
+{% for t in monitoreo_tcp %}
+{% for ip in [equipos[t.equipo].ipv4, equipos[t.equipo].ipv6 | default('')] if ip %}
+      - targets: ["{{ '[' ~ ip ~ ']' if ':' in ip else ip }}:{{ t.puerto }}"]
+        labels:
+          __param_module: tcp
+          servicio: {{ t.nombre }}
+          equipo: {{ t.equipo }}
+          familia: {{ familia(ip) }}
+{% endfor %}
+{% endfor %}
+
+  # Ping a los equipos (el AP solo tiene IPv4)
+  - job_name: sonda_icmp
+{{ sonda() }}
+    static_configs:
+{% for e in monitoreo_icmp %}
+{% for ip in [equipos[e].ipv4, equipos[e].ipv6 | default('')] if ip %}
+      - targets: ["{{ ip }}"]
+        labels:
+          __param_module: icmp
+          servicio: ping
+          equipo: {{ e }}
+          familia: {{ familia(ip) }}
+{% endfor %}
+{% endfor %}

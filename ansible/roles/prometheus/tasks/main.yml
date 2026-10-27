@@ -1,0 +1,80 @@
+---
+- name: Paquetes instalados
+  ansible.builtin.package_facts:
+
+# Con la configuración de fábrica escucharía en todas las direcciones
+- name: Impedir que el paquete arranque Prometheus al instalarse
+  ansible.builtin.copy:
+    dest: /usr/sbin/policy-rc.d
+    content: "#!/bin/sh\nexit 101\n"
+    mode: "0755"
+    force: false
+  register: prometheus_policy
+  when: "'prometheus' not in ansible_facts.packages"
+
+- name: Prometheus con versión fija
+  when: >-
+    'prometheus' not in ansible_facts.packages or
+    ansible_facts.packages['prometheus'][0].version != version_prometheus
+  block:
+    - name: Paquete prometheus
+      ansible.builtin.apt:
+        name: "prometheus={{ version_prometheus }}"
+        state: present
+        install_recommends: false
+        update_cache: true
+        cache_valid_time: 3600
+  always:
+    - name: Quitar el bloqueo de arranque
+      ansible.builtin.file:
+        path: /usr/sbin/policy-rc.d
+        state: absent
+      when: prometheus_policy is changed
+
+- name: Retener Prometheus
+  ansible.builtin.dpkg_selections:
+    name: prometheus
+    selection: hold
+
+- name: Carpeta de las reglas
+  ansible.builtin.file:
+    path: /etc/prometheus/reglas
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Reglas de alerta (validadas con promtool)
+  ansible.builtin.copy:
+    src: "{{ prometheus_alertas }}"
+    dest: /etc/prometheus/reglas/alertas.yml
+    owner: root
+    group: root
+    mode: "0644"
+    validate: promtool check rules %s
+  notify: Recargar Prometheus
+
+- name: Configuración (validada con promtool)
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: root
+    group: root
+    mode: "0644"
+    validate: promtool check config --syntax-only %s
+  notify: Recargar Prometheus
+
+- name: Argumentos de Prometheus
+  ansible.builtin.template:
+    src: prometheus.j2
+    dest: /etc/default/prometheus
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar Prometheus
+
+- name: Prometheus activo al arrancar
+  ansible.builtin.systemd_service:
+    name: prometheus
+    enabled: true
+    state: started

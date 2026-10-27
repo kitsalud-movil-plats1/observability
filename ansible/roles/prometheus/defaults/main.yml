@@ -1,0 +1,8 @@
+---
+# Prometheus en kit01 (D-09, R12, observability#1). Escucha en
+# monitoreo_prometheus (inventario); Grafana lo lee en el mismo equipo.
+prometheus_intervalo: 15s
+prometheus_retencion: 30d
+
+# Reglas de alerta del repositorio observability, que se copian tal cual
+prometheus_alertas: "{{ role_path }}/../../../prometheus/alertas.yml"

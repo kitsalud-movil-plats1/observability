@@ -1,0 +1,12 @@
+---
+# Los argumentos solo se leen al arrancar
+- name: Reiniciar Prometheus
+  ansible.builtin.systemd_service:
+    name: prometheus
+    state: restarted
+
+# La configuración y las reglas se recargan sin perder lo que está en memoria
+- name: Recargar Prometheus
+  ansible.builtin.systemd_service:
+    name: prometheus
+    state: reloaded
