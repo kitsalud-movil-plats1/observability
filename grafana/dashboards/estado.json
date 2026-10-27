@@ -288,7 +288,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(min(node_systemd_unit_state{equipo=\"clinica01\",name=\"samba-ad-dc.service\",state=\"active\"})) or vector(0)",
+          "expr": "(min(probe_success{servicio=\"ldaps\"})) or vector(0)",
           "legendFormat": "Inicio de sesión (AD)",
           "refId": "E",
           "instant": true,
@@ -335,6 +335,17 @@
           "expr": "(min(node_systemd_unit_state{equipo=\"kit01\",name=\"chrony.service\",state=\"active\"})) or vector(0)",
           "legendFormat": "Hora del kit (NTP)",
           "refId": "I",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(min(probe_success{servicio=\"ssh\"})) or vector(0)",
+          "legendFormat": "Acceso de administración (SSH)",
+          "refId": "J",
           "instant": true,
           "range": false
         }

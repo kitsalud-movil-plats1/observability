@@ -71,12 +71,13 @@ scrape_configs:
 {% endfor %}
 {% endfor %}
 
-  # Puertos TCP de servicios sin sonda propia (SMB, PostgreSQL)
+  # Puertos TCP de servicios sin sonda propia (SMB, PostgreSQL, LDAPS, SSH)
   - job_name: sonda_tcp
 {{ sonda() }}
     static_configs:
 {% for t in monitoreo_tcp %}
-{% for ip in [equipos[t.equipo].ipv4, equipos[t.equipo].ipv6 | default('')] if ip %}
+{% set e = equipos[t.equipo] if t.equipo in equipos else {} %}
+{% for ip in [t.ipv4 | default(e.ipv4 | default('')), t.ipv6 | default(e.ipv6 | default(''))] if ip %}
       - targets: ["{{ '[' ~ ip ~ ']' if ':' in ip else ip }}:{{ t.puerto }}"]
         labels:
           __param_module: tcp
