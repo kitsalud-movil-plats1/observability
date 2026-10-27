@@ -18,7 +18,7 @@ Los tres son paquetes de Ubuntu 24.04 con versión fija (`paquetes.yml`) y reten
 | `node` | kit01, clinica01 y comunidad01 | CPU, memoria, disco, hora (`node_timex_sync_status`) y estado de `named`, `kea-dhcp4-server`, `kea-dhcp6-server`, `radvd`, `chrony`, `nftables`, `netbird`, `libvirtd`, `samba-ad-dc` y `docker` |
 | `sonda_dns` | BIND9 en `10.20.20.10` y `fd5a:fc7e:d716:20::10` | A y AAAA de `pacientes.salud.movil` y A de `dc01.ad.salud.movil` (delegación a Samba AD). La respuesta tiene que traer la dirección esperada |
 | `sonda_web` | `pacientes` (`/api/ping`) y `registro` por HTTPS, `biblioteca` y `ca` por HTTP | Respuesta `2xx`. En HTTPS además valida el certificado con la raíz de la CA del kit |
-| `sonda_tcp` | clinica01 en el 445 (SMB) y el 5432 (PostgreSQL) | El puerto acepta conexiones |
+| `sonda_tcp` | clinica01 en el 445 (SMB), el 5432 (PostgreSQL) y el 636 (LDAPS de Samba AD), y el 22 (SSH) de kit01, clinica01 y comunidad01 | El puerto acepta conexiones. El SSH de kit01 se sondea en sus direcciones de servicio (`10.20.20.10` y `::10`) |
 | `sonda_icmp` | sw01, ap01 (solo IPv4), clinica01 y comunidad01 | Eco ICMP e ICMPv6 |
 | `prometheus` y `blackbox` | kit01 | Los propios servicios de monitoreo |
 
@@ -28,7 +28,7 @@ Las listas están en `platform/ansible/inventarios/kit/group_vars/all/monitoreo.
 
 **Node por IPv4.** Prometheus lee el node_exporter de cada VM por IPv4 para no duplicar las series. El IPv6 de cada VM lo cubren las sondas de ping, web y TCP.
 
-**Flujos.** kit01 llega a las VMs por F-14. ufw de cada VM abre a `10.20.20.1`, `10.20.20.10`, `fd5a:fc7e:d716:20::1` y `fd5a:fc7e:d716:20::10` el 9100 y los puertos de las sondas (`monitoreo_puertos` en `host_vars`), que son 443 y 445 en clinica01 y 80 y 443 en comunidad01. El 5432 lo publica Docker sin pasar por ufw y lo sigue filtrando `pg_hba.conf`, que rechaza la sesión de kit01 después de aceptar la conexión TCP.
+**Flujos.** kit01 llega a las VMs por F-14, y al 22 y al 636 por F-02 y F-13. ufw de cada VM abre a `10.20.20.1`, `10.20.20.10`, `fd5a:fc7e:d716:20::1` y `fd5a:fc7e:d716:20::10` el 9100 y los puertos de las sondas (`monitoreo_puertos` en `host_vars`), que son 443 y 445 en clinica01 y 80 y 443 en comunidad01. El 5432 lo publica Docker sin pasar por ufw y lo sigue filtrando `pg_hba.conf`, que rechaza la sesión de kit01 después de aceptar la conexión TCP.
 
 ## Alertas
 
@@ -63,7 +63,7 @@ En kit01.
 | Comando | Resultado esperado |
 |---|---|
 | `ss -ltn \| grep -E ':(9090\|9100\|9115) '` | Los tres solo en `127.0.0.1` |
-| `curl -s 127.0.0.1:9090/api/v1/targets \| grep -o '"health":"[a-z]*"' \| sort \| uniq -c` | 30 en `up` |
+| `curl -s 127.0.0.1:9090/api/v1/targets \| grep -o '"health":"[a-z]*"' \| sort \| uniq -c` | 38 en `up` |
 | `curl -s '127.0.0.1:9090/api/v1/query?query=probe_success==0'` | Resultado vacío |
 | `curl -s 127.0.0.1:9090/api/v1/alerts` | Sin alertas |
 | `curl -s '127.0.0.1:9115/probe?module=web_pacientes&target=https://10.20.20.12/' \| grep probe_success` | `0`, porque el intermedio de comunidad01 no puede firmar `pacientes` |
