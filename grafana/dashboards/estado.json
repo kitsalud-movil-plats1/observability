@@ -288,6 +288,17 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "expr": "(min(probe_success{servicio=\"videos\"})) or vector(0)",
+          "legendFormat": "Videos",
+          "refId": "L",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "(min(probe_success{servicio=\"smb\"})) or vector(0)",
           "legendFormat": "Archivos compartidos",
           "refId": "D",
