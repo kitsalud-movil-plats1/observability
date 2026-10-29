@@ -17,6 +17,10 @@ node_exporter_unidades:
   - libvirtd
   - samba-ad-dc
   - docker
+  # Publicación de contenido (platform#10): el timer de clinica01 y el reinicio
+  # de Kiwix en comunidad01; si fallan, UnidadFallida
+  - publicacion
+  - kiwix-recarga
 
 # Puertos que se abren a kit01 en cada VM para las sondas blackbox, además
 # del 9100 (host_vars de cada VM)
