@@ -20,7 +20,7 @@ Están pensados para leerse de un vistazo. Verde funciona, rojo no, y cada panel
 |---|---|
 | Problemas ahora | Cuántas alertas hay activas. Lo normal es "Ninguno" |
 | Equipos | Si kit01, clinica01, comunidad01, el switch y el Wi-Fi responden |
-| Servicios | Si funcionan la historia clínica (DHIS2), el registro de pacientes, la consulta de prerregistros, la biblioteca, los videos, los archivos compartidos, el inicio de sesión (LDAPS de AD), la base de datos, el DNS, el DHCP, la hora y el acceso de administración (SSH). Cada uno se prueba en IPv4 y en IPv6, y basta que falle uno de los dos para que salga en rojo |
+| Servicios | Si funcionan la historia clínica (DHIS2), el registro de pacientes, la consulta de prerregistros, la biblioteca, los videos, el portal de la Comunidad, los archivos compartidos, el inicio de sesión (LDAPS de AD), la base de datos, el DNS, el DHCP, la hora y el acceso de administración (SSH). Cada uno se prueba en IPv4 y en IPv6, y basta que falle uno de los dos para que salga en rojo |
 | Qué está fallando | Las alertas activas en español, con el servicio, el equipo y si falla en IPv4 o en IPv6 |
 | Si algo está en rojo | Los tres primeros pasos del diagnóstico rápido (sección 12 del documento) |
 

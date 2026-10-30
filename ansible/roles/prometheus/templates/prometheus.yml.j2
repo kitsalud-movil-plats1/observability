@@ -61,7 +61,8 @@ scrape_configs:
 {{ sonda() }}
     static_configs:
 {% for w in monitoreo_web %}
-{% for ip in [equipos[w.equipo].ipv4, equipos[w.equipo].ipv6 | default('')] if ip %}
+{% set e = equipos[w.equipo] if w.equipo in equipos else {} %}
+{% for ip in [w.ipv4 | default(e.ipv4 | default('')), w.ipv6 | default(e.ipv6 | default(''))] if ip %}
       - targets: ["{{ w.esquema }}://{{ '[' ~ ip ~ ']' if ':' in ip else ip }}{{ w.ruta }}"]
         labels:
           __param_module: web_{{ w.nombre }}
