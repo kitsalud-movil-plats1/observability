@@ -24,6 +24,11 @@ node_exporter_unidades:
   # Backup semanal de kit01 (platform#11); sin el disco USB o si algo no se
   # pudo extraer, UnidadFallida
   - backup
+  # UPS lógica y apagado ordenado de kit01 (platform#13); sin ellas no hay
+  # apagado ordenado ante un corte
+  - nut-driver@kit
+  - nut-server
+  - nut-monitor
 
 # Puertos que se abren a kit01 en cada VM para las sondas blackbox, además
 # del 9100 (host_vars de cada VM)
