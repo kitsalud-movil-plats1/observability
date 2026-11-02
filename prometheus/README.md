@@ -7,7 +7,7 @@ Estado de servicios, puertos, CPU, memoria y disco del kit (R12, D-09). Promethe
 | [`alertas.yml`](alertas.yml) | Reglas `ServicioCaido`, `UnidadFallida`, `ExporterCaido` y `DiscoAlto`. El rol `prometheus` las copia a `/etc/prometheus/reglas/` y las valida con `promtool` |
 | [`../ansible/roles/prometheus/`](../ansible/roles/prometheus/) | Prometheus 2.45.3 en `127.0.0.1:9090`, cada 15 s y con 30 días de retención. Los trabajos salen del inventario (`prometheus.yml.j2`) |
 | [`../ansible/roles/blackbox_exporter/`](../ansible/roles/blackbox_exporter/) | blackbox 0.24.0 en `127.0.0.1:9115`, con un módulo por consulta DNS y por servicio web (`blackbox.yml.j2`) |
-| [`../ansible/roles/node_exporter/`](../ansible/roles/node_exporter/) | node_exporter 1.7.0 con el colector systemd de las unidades críticas. En kit01 escucha en `127.0.0.1:9100` y en las VMs en el 9100, con ufw abierto solo para kit01 |
+| [`../ansible/roles/node_exporter/`](../ansible/roles/node_exporter/) | node_exporter 1.7.0 con el colector systemd de las unidades críticas (entre ellas el backup y las de NUT, `nut-driver@kit`, `nut-server` y `nut-monitor`). En kit01 escucha en `127.0.0.1:9100` y en las VMs en el 9100, con ufw abierto solo para kit01 |
 
 Los tres son paquetes de Ubuntu 24.04 con versión fija (`paquetes.yml`) y retenidos con `apt-mark hold`. Ninguno escucha fuera de localhost en kit01, así que nftables no cambia.
 
