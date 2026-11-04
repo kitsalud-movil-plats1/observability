@@ -56,6 +56,7 @@ En kit01.
 | `sudo ls /var/log/kitsalud/` | `clinica01`, `comunidad01`, `kit01` y `sw01` |
 | Un SSH con un usuario inexistente hacia clinica01 por `10.20.20.11` y por `fd5a:fc7e:d716:20::11`, y luego `sudo grep intruso /var/log/kitsalud/clinica01/auth.log` | `Invalid user intruso` desde `10.20.20.1` y desde `fd5a:fc7e:d716:20::10` |
 | Un `kinit` con la clave mala en clinica01 (un solo intento, para no bloquear la cuenta) y luego `sudo grep samba-auth /var/log/kitsalud/clinica01/auth.log` | `NT_STATUS_WRONG_PASSWORD` con el usuario |
+| En clinica01, `sudo logrotate -f /etc/logrotate.d/samba-auth`, un `kinit` con un usuario que no existe y luego el mismo `grep` en kit01 | El intento aparece aunque el archivo se haya truncado |
 | `sudo tail /var/log/kitsalud/kit01/firewall.log` | Líneas `fw-drop` |
 | Encender `prueba01` (`playbooks/prueba01.yml`) y `sudo grep DHCP4_LEASE_ALLOC /var/log/kitsalud/kit01/dhcp.log` | El préstamo de su MAC (`52:54:00:40:00:50`) |
 | Entrar a sw01 y `sudo tail /var/log/kitsalud/sw01/syslog.log` | `user admin logged in from 10.20.10.1 via ssh` |
@@ -69,5 +70,6 @@ En kit01.
 - **No llega nada de una VM.** En la VM, `systemctl status rsyslog` y `journalctl -u rsyslog -n 20` (un `omfwd` suspendido dice que no pudo conectar). Desde la VM, `nc -zv 10.20.20.10 514`. Si no conecta, revisar en kit01 el contador de la regla del 514 y `ss -lnt | grep 514`.
 - **No llega nada de sw01.** En sw01, `/system logging action print detail where name=remote` (`remote=10.20.20.10`, `bsd-syslog=yes`) y `/system logging print` (las cuatro reglas con `action=remote`). Un `:log info prueba` tiene que aparecer en `sw01/syslog.log`.
 - **Los mensajes caen en `desconocido/`.** El equipo envía desde una dirección que no está en `registros_equipos` (por ejemplo, otra IPv6). Se agrega la dirección al inventario y se vuelve a aplicar `registros.yml`.
+- **No llegan las líneas nuevas de Samba después de una rotación.** La rotación de Samba usa `copytruncate`, que deja el archivo en 0 bytes con el mismo inodo. El `input` de imfile tiene `reopenOnTruncate="on"` para volver al inicio. Si el estado guardado de imfile quedó con un desplazamiento mayor que el archivo (`sudo cat /var/spool/rsyslog/imfile-state*` contra `sudo stat -c %s /var/log/samba/auth.log`), se detiene rsyslog (`sudo systemctl stop syslog.socket rsyslog`), se borra ese archivo de estado y se vuelve a arrancar. imfile lee el archivo desde el inicio y envía lo que faltaba.
 - **No llegan las líneas nuevas de Samba.** Revisar denegaciones de AppArmor en clinica01 con `journalctl -k | grep 'apparmor="DENIED".*rsyslogd'` y que `/etc/apparmor.d/local/usr.sbin.rsyslogd` tenga el bloque del rol `comun`.
 - **rsyslog no arranca en kit01 después de un cambio.** `sudo rsyslogd -N1` muestra el error con el archivo y la línea. Si las direcciones de escucha no existen, `ip addr show br-srv` tiene que mostrar `.10` y `::10` (las mantiene `srv-dummy0`).
