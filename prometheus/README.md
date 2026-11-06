@@ -1,6 +1,6 @@
 # Prometheus y exporters en kit01
 
-Estado de servicios, puertos, CPU, memoria y disco del kit (R12, D-09). Prometheus vive en kit01 para seguir viendo el kit aunque caiga una VM. Lee el `node_exporter` de kit01 y de las VMs y hace sondas blackbox de DNS, web, TCP y ping, en IPv4 y en IPv6 salvo el AP, que solo tiene IPv4. No hay Alertmanager, porque sin Internet no hay a dónde enviar las alertas. Se revisan en Prometheus (`/classic/alerts`) y, con observability#2, en Grafana (`monitoreo.salud.movil`).
+Estado de servicios, puertos, CPU, memoria y disco del kit. Prometheus vive en kit01 para seguir viendo el kit aunque caiga una VM. Lee el `node_exporter` de kit01 y de las VMs y hace sondas blackbox de DNS, web, TCP y ping, en IPv4 y en IPv6 salvo el AP, que solo tiene IPv4. No hay Alertmanager, porque sin Internet no hay a dónde enviar las alertas. Se revisan en Prometheus (`/classic/alerts`) y, con observability#2, en Grafana (`monitoreo.salud.movil`).
 
 | Archivo | Qué es |
 |---|---|
@@ -28,7 +28,7 @@ Las listas están en `platform/ansible/inventarios/kit/group_vars/all/monitoreo.
 
 **Node por IPv4.** Prometheus lee el node_exporter de cada VM por IPv4 para no duplicar las series. El IPv6 de cada VM lo cubren las sondas de ping, web y TCP.
 
-**Flujos.** kit01 llega a las VMs por F-14, y al 22 y al 636 por F-02 y F-13. ufw de cada VM abre a `10.20.20.1`, `10.20.20.10`, `fd5a:fc7e:d716:20::1` y `fd5a:fc7e:d716:20::10` el 9100 y los puertos de las sondas (`monitoreo_puertos` en `host_vars`), que son 443 y 445 en clinica01 y 80 y 443 en comunidad01. El 5432 lo publica Docker sin pasar por ufw y lo sigue filtrando `pg_hba.conf`, que rechaza la sesión de kit01 después de aceptar la conexión TCP.
+**Flujos.** El firewall deja a kit01 llegar a las VMs para las métricas y las sondas. ufw de cada VM abre a `10.20.20.1`, `10.20.20.10`, `fd5a:fc7e:d716:20::1` y `fd5a:fc7e:d716:20::10` el 9100 y los puertos de las sondas (`monitoreo_puertos` en `host_vars`), que son 443 y 445 en clinica01 y 80 y 443 en comunidad01. El 5432 lo publica Docker sin pasar por ufw y lo sigue filtrando `pg_hba.conf`, que rechaza la sesión de kit01 después de aceptar la conexión TCP.
 
 ## Alertas
 

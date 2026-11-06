@@ -1,6 +1,6 @@
 # Logs centralizados con rsyslog en kit01
 
-Eventos de DHCP, DNS, firewall y autenticación de todo el kit en un solo lugar (R12, D-09). rsyslog recibe en kit01 los logs de las VMs y de sw01 y los guarda por equipo en `/var/log/kitsalud/`, junto con una copia de los eventos de kit01. Así se puede diagnosticar desde kit01 aunque una VM esté caída. El AP no envía syslog y su registro se consulta en su página.
+Eventos de DHCP, DNS, firewall y autenticación de todo el kit en un solo lugar. rsyslog recibe en kit01 los logs de las VMs y de sw01 y los guarda por equipo en `/var/log/kitsalud/`, junto con una copia de los eventos de kit01. Así se puede diagnosticar desde kit01 aunque una VM esté caída. El AP no envía syslog y su registro se consulta en su página.
 
 | Archivo | Qué es |
 |---|---|
@@ -13,8 +13,8 @@ Eventos de DHCP, DNS, firewall y autenticación de todo el kit en un solo lugar 
 
 | Origen | Cómo llega | Carpeta | Archivos |
 |---|---|---|---|
-| clinica01, comunidad01 | Todo su syslog por TCP 514 a `10.20.20.10` (F-15), con cola en disco. clinica01 agrega el `auth.log` de Samba con imfile (etiqueta `samba-auth`) | `clinica01/`, `comunidad01/` | `auth.log` (facilidades `auth` y `authpriv`, SSH, sudo y Samba) y `syslog.log` (lo demás) |
-| sw01 | Temas `info`, `warning`, `error` y `critical` por UDP 514 a `10.20.20.10` (F-16), en formato BSD | `sw01/` | `syslog.log` (logins, cambios de configuración, enlaces) |
+| clinica01, comunidad01 | Todo su syslog por TCP 514 a `10.20.20.10`, con cola en disco. clinica01 agrega el `auth.log` de Samba con imfile (etiqueta `samba-auth`) | `clinica01/`, `comunidad01/` | `auth.log` (facilidades `auth` y `authpriv`, SSH, sudo y Samba) y `syslog.log` (lo demás) |
+| sw01 | Temas `info`, `warning`, `error` y `critical` por UDP 514 a `10.20.20.10`, en formato BSD | `sw01/` | `syslog.log` (logins, cambios de configuración, enlaces) |
 | kit01 | Copia de sus propios eventos. Los originales siguen en `/var/log/syslog`, `kern.log` y `auth.log` | `kit01/` | `firewall.log` (`fw-drop`), `dhcp.log` (Kea DHCPv4 y DHCPv6), `dns.log` (eventos generales de BIND9) y `auth.log` |
 | Una IP que no está en la lista | Solo si nftables la deja pasar | `desconocido/` | `auth.log` y `syslog.log` |
 
@@ -38,7 +38,7 @@ ansible-playbook playbooks/dns.yml                # canal syslog de BIND9
 ansible-playbook playbooks/comun.yml -l vms       # reenvío de las VMs
 ```
 
-Antes hacen falta las reglas F-15 y F-16 de nftables (`network/kit01/nftables/`). sw01 se configura a mano por SSH a través de kit01 en Safe Mode, con las líneas de `/system logging` de `sw01.rsc`.
+Antes hacen falta las reglas del puerto 514 de nftables (`network/kit01/nftables/`). sw01 se configura a mano por SSH a través de kit01 en Safe Mode, con las líneas de `/system logging` de `sw01.rsc`.
 
 - **Validación.** Las dos plantillas de rsyslog se validan con `rsyslogd -N1` antes de copiarse. AppArmor solo deja a rsyslogd leer sus propias rutas, así que se valida una copia en `/etc/rsyslog.d/` con un nombre que no termina en `.conf`. La del reenvío lleva además el `workDirectory` de `rsyslog.conf`, que imfile necesita.
 - **imfile y AppArmor.** imfile abre `/`, `/var/` y `/var/log/` para vigilar el archivo, y el perfil de rsyslogd solo permite lo que hay dentro de `/var/log/`. El rol `comun` agrega esas tres rutas a `/etc/apparmor.d/local/usr.sbin.rsyslogd`, solo en los equipos con `comun_rsyslog_archivos`, y recarga el perfil antes de reiniciar rsyslog.

@@ -1,6 +1,6 @@
 # Grafana en kit01
 
-Vista del estado del kit para el personal y para quien lo administra (R12, D-09), con inicio de sesión centralizado en Samba AD (R10, P7). Grafana corre en kit01, así que sigue disponible aunque una VM esté caída, y lee Prometheus en el mismo equipo ([`../prometheus/`](../prometheus/)). Se entra por `https://monitoreo.salud.movil`.
+Vista del estado del kit para el personal y para quien lo administra, con inicio de sesión centralizado en Samba AD. Grafana corre en kit01, así que sigue disponible aunque una VM esté caída, y lee Prometheus en el mismo equipo ([`../prometheus/`](../prometheus/)). Se entra por `https://monitoreo.salud.movil`.
 
 | Archivo | Qué es |
 |---|---|
@@ -8,7 +8,7 @@ Vista del estado del kit para el personal y para quien lo administra (R12, D-09)
 | [`dashboards/recursos.json`](dashboards/recursos.json) | **Recursos de los equipos** |
 | [`../ansible/roles/grafana/`](../ansible/roles/grafana/) | Grafana OSS 13.2.4 del repositorio `apt.grafana.com`, retenido, en `127.0.0.1:3000`, con `grafana.ini`, `ldap.toml`, el datasource de Prometheus y el sitio `monitoreo` de nginx |
 
-El rol `nginx` de `platform/ansible` instala nginx 1.24 (retenido) y sin el sitio de fábrica. El sitio `monitoreo` escucha en el 443 de todas las direcciones con el certificado `monitoreo` que firma la raíz del kit (`/etc/kitsalud/tls/`). nftables solo deja llegar a ese puerto a las IP de administración y a NetBird (F-01), y el portal cautivo irá en su propia dirección (`10.20.40.1`).
+El rol `nginx` de `platform/ansible` instala nginx 1.24 (retenido) y sin el sitio de fábrica. El sitio `monitoreo` escucha en el 443 de todas las direcciones con el certificado `monitoreo` que firma la raíz del kit (`/etc/kitsalud/tls/`). nftables solo deja llegar a ese puerto a las IP de administración y a NetBird, y el portal cautivo irá en su propia dirección (`10.20.40.1`).
 
 ## Dashboards
 
@@ -22,7 +22,7 @@ Están pensados para leerse de un vistazo. Verde funciona, rojo no, y cada panel
 | Equipos | Si kit01, clinica01, comunidad01, el switch y el Wi-Fi responden |
 | Servicios | Si funcionan la historia clínica (DHIS2), el registro de pacientes, la consulta de prerregistros, la biblioteca, los videos, el portal de la Comunidad, los archivos compartidos, el inicio de sesión (LDAPS de AD), la base de datos, el DNS, el DHCP, la hora y el acceso de administración (SSH). Cada uno se prueba en IPv4 y en IPv6, y basta que falle uno de los dos para que salga en rojo |
 | Qué está fallando | Las alertas activas en español, con el servicio, el equipo y si falla en IPv4 o en IPv6 |
-| Si algo está en rojo | Los tres primeros pasos del diagnóstico rápido (sección 12 del documento) |
+| Si algo está en rojo | Los tres primeros pasos del diagnóstico rápido |
 
 **Recursos de los equipos**
 
@@ -39,7 +39,7 @@ Los dashboards son de solo lectura en la interfaz (`allowUiUpdates: false`). Par
 
 | Cuenta | Cómo entra | Rol |
 |---|---|---|
-| Usuarios del grupo AD `admins` (por ejemplo `laura.gomez`) | LDAPS contra `dc01.ad.salud.movil:636` (F-13) con su propia clave, sin cuenta de servicio | Admin |
+| Usuarios del grupo AD `admins` (por ejemplo `laura.gomez`) | LDAPS contra `dc01.ad.salud.movil:636` con su propia clave, sin cuenta de servicio | Admin |
 | Usuarios fuera de `admins` (por ejemplo `ana.rojas`) | Samba acepta la clave, pero Grafana no los deja entrar | Ninguno |
 | `admin` local | Clave del vault (`vault_grafana_admin_password`) | Administrador de Grafana. Es la cuenta de respaldo cuando clinica01 no está |
 
